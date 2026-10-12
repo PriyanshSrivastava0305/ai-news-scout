@@ -1,0 +1,13 @@
+{
+  "ntfy_topic": "ai-news-scout-alert-94b2f1",
+  "ntfy_server": "https://ntfy.sh",
+  "check_interval_minutes": 30,
+  "min_relevance_score": 1,
+  "enable_sources": {
+    "huggingface_models": true,
+    "huggingface_papers": true,
+    "github_releases": true,
+    "reddit_localllama": true,
+    "arxiv_ai": true
+  }
+}

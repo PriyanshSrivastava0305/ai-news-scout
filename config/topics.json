@@ -1,0 +1,70 @@
+{
+  "topics": [
+    {
+      "id": "frontier-open-models",
+      "name": "Frontier Open-Source Models",
+      "description": "Major model weights released by leading labs",
+      "keywords": [
+        "llama-3",
+        "llama-4",
+        "deepseek",
+        "qwen",
+        "mistral",
+        "gemma",
+        "phi-3",
+        "phi-4",
+        "nemotron",
+        "command-r"
+      ],
+      "priority": "high"
+    },
+    {
+      "id": "reasoning-models",
+      "name": "Reasoning & Thinking Models",
+      "description": "Models specialized in complex reasoning, math, and code",
+      "keywords": [
+        "reasoning model",
+        "chain-of-thought",
+        "o1-like",
+        "deepseek-r1",
+        "qwq",
+        "process supervision",
+        "test-time compute"
+      ],
+      "priority": "high"
+    },
+    {
+      "id": "local-quantized-models",
+      "name": "Local & Quantized LLMs",
+      "description": "On-device, small footprint, GGUF and Ollama-compatible releases",
+      "keywords": [
+        "gguf",
+        "ollama",
+        "vllm",
+        "exllamav2",
+        "quantized",
+        "1b",
+        "3b",
+        "7b",
+        "8b"
+      ],
+      "priority": "default"
+    },
+    {
+      "id": "vision-multimodal",
+      "name": "Multimodal & Vision AI",
+      "description": "Image, video, audio, and omni models",
+      "keywords": [
+        "vision-language",
+        "vlm",
+        "pixtral",
+        "internvl",
+        "flux",
+        "cogvideo",
+        "whisper",
+        "omni model"
+      ],
+      "priority": "default"
+    }
+  ]
+}
