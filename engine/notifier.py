@@ -33,12 +33,12 @@ class NtfyNotifier:
         expanded_details: str,
         url: str,
         priority: str = "default",
-        tags: Optional[str] = "robot,rocket"
+        tags: Optional[str] = "rocket"
     ) -> bool:
         """
-        Sends an alert to ntfy.sh using JSON payload (full UTF-8 support for emojis & rich markdown).
+        Sends an alert to ntfy.sh using JSON payload with rich Markdown enabled.
         - Phone / Laptop system banner: Shows title + 1-2 lines short summary.
-        - Tapped / Opened in ntfy app: Shows full expanded breakdown and action buttons.
+        - Tapped / Opened in ntfy app: Shows full formatted breakdown with bullet points.
         """
         if not self.topic:
             print("[Notifier] Error: No ntfy topic specified!")
@@ -46,14 +46,8 @@ class NtfyNotifier:
 
         endpoint = f"{self.server}"
 
-        # Combine short summary with expandable section
-        full_message = (
-            f"{short_summary}\n\n"
-            f"━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-            f"📖 EXPANDED DOSSIER\n"
-            f"━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-            f"{expanded_details}"
-        )
+        # Clean mobile Markdown format with proper spacing
+        full_message = f"{short_summary}\n\n{expanded_details}"
 
         prio_num = 3
         if priority == "high":
@@ -61,7 +55,7 @@ class NtfyNotifier:
         elif priority == "urgent":
             prio_num = 5
 
-        tag_list = [t.strip() for t in (tags or "robot,rocket").split(",") if t.strip()]
+        tag_list = [t.strip() for t in (tags or "rocket").split(",") if t.strip()]
 
         payload = {
             "topic": self.topic,
@@ -70,10 +64,11 @@ class NtfyNotifier:
             "priority": prio_num,
             "tags": tag_list,
             "click": url,
+            "markdown": True,
             "actions": [
                 {
                     "action": "view",
-                    "label": "🌐 Open Weights / Repo",
+                    "label": "🌐 Open Weights / Paper",
                     "url": url
                 }
             ]

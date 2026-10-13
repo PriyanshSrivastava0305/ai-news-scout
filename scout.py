@@ -22,6 +22,7 @@ from sources.github_scout import GitHubScout
 from sources.reddit_scout import RedditScout
 from sources.arxiv_scout import ArxivScout
 from sources.news_scout import IndustryNewsScout
+from sources.papers_spotlight import PapersSpotlightScout
 
 CONFIG_DIR = os.path.join(os.path.dirname(__file__), "config")
 TOPICS_PATH = os.path.join(CONFIG_DIR, "topics.json")
@@ -42,7 +43,7 @@ def save_settings(settings):
 
 def run_scout_cycle(dry_run=False):
     print("=" * 60)
-    print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Starting AI News Scout Cycle...")
+    print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Starting High-Quality AI Scout Cycle...")
     print("=" * 60)
 
     settings = load_settings()
@@ -57,16 +58,16 @@ def run_scout_cycle(dry_run=False):
     print("-" * 60)
 
     all_items = []
-    
-    # Hugging Face
+
+    # 1. Hugging Face Trending & Curated Daily Papers (Quality Filtered)
     if settings.get("enable_sources", {}).get("huggingface_models", True):
-        print("🔍 Scanning Hugging Face Hub & Daily Papers...")
+        print("🔍 Scanning Hugging Face Trending & Curated Papers...")
         hf = HuggingFaceScout()
         hf_items = hf.fetch_recent_models()
-        print(f"   → Found {len(hf_items)} items from Hugging Face.")
+        print(f"   → Found {len(hf_items)} curated items from Hugging Face.")
         all_items.extend(hf_items)
 
-    # GitHub Releases
+    # 2. GitHub Major AI Releases
     if settings.get("enable_sources", {}).get("github_releases", True):
         print("🔍 Scanning GitHub AI Releases...")
         gh = GitHubScout()
@@ -74,23 +75,23 @@ def run_scout_cycle(dry_run=False):
         print(f"   → Found {len(gh_items)} releases from GitHub.")
         all_items.extend(gh_items)
 
-    # Reddit LocalLLaMA
-    if settings.get("enable_sources", {}).get("reddit_localllama", True):
-        print("🔍 Scanning Reddit r/LocalLLaMA...")
-        rd = RedditScout()
-        rd_items = rd.fetch_recent_drops()
-        print(f"   → Found {len(rd_items)} items from Reddit.")
-        all_items.extend(rd_items)
+    # 3. Breakthrough & Milestone Research Papers Spotlight
+    if settings.get("enable_sources", {}).get("research_spotlight", True):
+        print("🔍 Scanning Milestone & Foundational Papers Spotlight...")
+        spotlight = PapersSpotlightScout()
+        spotlight_items = spotlight.fetch_spotlight_papers()
+        print(f"   → Loaded {len(spotlight_items)} breakthrough papers.")
+        all_items.extend(spotlight_items)
 
-    # arXiv AI
+    # 4. arXiv Preprints
     if settings.get("enable_sources", {}).get("arxiv_ai", True):
-        print("🔍 Scanning arXiv AI...")
+        print("🔍 Scanning arXiv AI Preprints...")
         ax = ArxivScout()
         ax_items = ax.fetch_recent_drops()
         print(f"   → Found {len(ax_items)} preprints from arXiv.")
         all_items.extend(ax_items)
 
-    # Industry & Legal / Government News (Google News & Hacker News)
+    # 5. Industry & Legal / Government News (Google News & Hacker News)
     if settings.get("enable_sources", {}).get("industry_news", True):
         print("🔍 Scanning Industry News (Legal, Investigations, Gov & Companies)...")
         in_scout = IndustryNewsScout()
@@ -99,7 +100,7 @@ def run_scout_cycle(dry_run=False):
         all_items.extend(news_items)
 
     print("-" * 60)
-    print(f"Total raw items gathered: {len(all_items)}. Filtering against your topics...")
+    print(f"Total raw items gathered: {len(all_items)}. Filtering for interesting drops...")
 
     matched_count = 0
     skipped_seen = 0
@@ -148,6 +149,20 @@ def run_scout_cycle(dry_run=False):
     print("=" * 60)
 
 
+def cmd_daemon(interval_seconds=120):
+    print("=" * 60)
+    print(f"⚡ RUNNING 24/7 REAL-TIME DAEMON (Polling every {interval_seconds}s)")
+    print("Press Ctrl+C at any time to stop.")
+    print("=" * 60)
+    try:
+        while True:
+            run_scout_cycle()
+            print(f"\n⏳ Sleeping for {interval_seconds} seconds before next check...\n")
+            time.sleep(interval_seconds)
+    except KeyboardInterrupt:
+        print("\nDaemon stopped by user.")
+
+
 def cmd_add_topic(name=None, keywords=None, description=None, priority="default"):
     if not os.path.exists(TOPICS_PATH):
         topics_data = {"topics": []}
@@ -178,7 +193,6 @@ def cmd_add_topic(name=None, keywords=None, description=None, priority="default"
         "priority": priority
     }
 
-    # Replace if exists or append
     existing = [t for t in topics_data["topics"] if t.get("id") == topic_id]
     if existing:
         topics_data["topics"] = [t if t.get("id") != topic_id else new_topic for t in topics_data["topics"]]
@@ -233,30 +247,31 @@ def cmd_remove_topic(topic_identifier):
 def cmd_test_notification():
     notifier = NtfyNotifier()
     print(f"Sending test notification to ntfy topic: '{notifier.topic}'...")
-    title = "🚀 [Test Drop] DeepSeek-R1 Released"
-    short_summary = "Open-weights reasoning model matching OpenAI o1 on math and code benchmarks. Apache 2.0 license."
+    title = "🚀 [Reasoning Models] DeepSeek-R1 Released"
+    short_summary = "DeepSeek-R1: Pure RL model matching OpenAI o1 on math, coding, and multi-step reasoning."
     expanded = (
-        "📌 **Model:** DeepSeek-R1\n"
-        "🏷️ **Topic:** Reasoning & Thinking Models\n"
-        "🌐 **Source:** Hugging Face Hub / GitHub\n\n"
-        "⚙️ **Specs & Highlights:**\n"
-        "• Parameters: 671B Total (37B active MoE)\n"
-        "• License: Apache 2.0\n"
-        "• Context Window: 128k tokens\n"
-        "• Native GGUF & vLLM support\n\n"
-        "🔗 **Weights & Repo:** https://huggingface.co/deepseek-ai/DeepSeek-R1"
+        "*DeepSeek-R1: Incentivizing Reasoning Capability via RL*\n"
+        "🏷️ Category: Reasoning & Thinking Models\n\n"
+        "✨ **What Makes It Special:**\n"
+        "• Pure reinforcement learning (RL) emergence without prior supervised human demonstration.\n"
+        "• Matches OpenAI o1-1217 on AIME (79.8%) and Codeforces (96.3 percentile).\n\n"
+        "🎯 **Where Can This Be Used:**\n"
+        "• Autonomous software engineering, competitive coding, and math proof verification.\n"
+        "• Distilled dense versions (1.5B to 70B) run locally on consumer GPUs with zero cloud fees.\n\n"
+        "⚙️ **Key Specs & Metadata:**\n"
+        "• 671B MoE (37B active) | Apache 2.0 Open Weights | 128k context\n\n"
+        "🔗 **Link:** https://github.com/deepseek-ai/DeepSeek-R1"
     )
     success = notifier.send_notification(
         title=title,
         short_summary=short_summary,
         expanded_details=expanded,
-        url="https://huggingface.co/deepseek-ai/DeepSeek-R1",
+        url="https://github.com/deepseek-ai/DeepSeek-R1",
         priority="high"
     )
     if success:
-        print(f"\n🎉 SUCCESS! Test notification pushed successfully.")
+        print(f"\n🎉 SUCCESS! Clean test alert pushed to your phone & laptop.")
         print(f"📱 Check your phone and laptop at: {notifier.server}/{notifier.topic}")
-        print("Notice how the notification is 1-2 lines, and expands when clicked/tapped!")
     else:
         print("❌ Failed to push test notification. Check internet connection.")
 
@@ -276,6 +291,10 @@ def main():
     # run command
     run_parser = subparsers.add_parser("run", help="Run one scout cycle")
     run_parser.add_argument("--dry-run", action="store_true", help="Find drops without sending push notifications")
+
+    # daemon command (continuous real-time)
+    daemon_parser = subparsers.add_parser("daemon", help="Run continuously in real-time")
+    daemon_parser.add_argument("--interval", type=int, default=120, help="Seconds between scans (default: 120)")
 
     # test command
     subparsers.add_parser("test", help="Send a test notification to verify phone & laptop alerts")
@@ -302,6 +321,8 @@ def main():
 
     if args.command == "run":
         run_scout_cycle(dry_run=args.dry_run)
+    elif args.command == "daemon":
+        cmd_daemon(args.interval)
     elif args.command == "test":
         cmd_test_notification()
     elif args.command == "add-topic":
