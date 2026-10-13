@@ -7,7 +7,7 @@
     "huggingface_models": true,
     "huggingface_papers": true,
     "github_releases": true,
-    "reddit_localllama": true,
+    "reddit_localllama": false,
     "arxiv_ai": true,
     "industry_news": true
   }

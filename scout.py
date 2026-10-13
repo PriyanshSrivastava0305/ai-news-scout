@@ -1,6 +1,7 @@
 import os
 import sys
 import json
+import time
 import argparse
 from datetime import datetime
 
@@ -136,6 +137,7 @@ def run_scout_cycle(dry_run=False):
                     print("   ✅ Notification sent to your phone & laptop via ntfy!")
                 else:
                     print("   ❌ Failed to send notification.")
+                time.sleep(0.4)
 
     if not dry_run:
         cache.save()

@@ -25,7 +25,7 @@ jobs:
 
       - name: Run AI News Scout
         env:
-          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC || 'ai-news-scout-alert-94b2f1' }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           python scout.py run

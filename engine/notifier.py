@@ -9,8 +9,13 @@ SETTINGS_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "config
 class NtfyNotifier:
     def __init__(self, settings_path: str = SETTINGS_PATH):
         self.settings = self.load_settings(settings_path)
-        self.topic = os.getenv("NTFY_TOPIC", self.settings.get("ntfy_topic", "ai-news-scout-alert"))
-        self.server = os.getenv("NTFY_SERVER", self.settings.get("ntfy_server", "https://ntfy.sh")).rstrip("/")
+        
+        # Ensure topic falls back to settings.json even if NTFY_TOPIC is passed as empty string
+        env_topic = (os.getenv("NTFY_TOPIC") or "").strip()
+        self.topic = env_topic or self.settings.get("ntfy_topic") or "ai-news-scout-alert-94b2f1"
+        
+        env_server = (os.getenv("NTFY_SERVER") or "").strip()
+        self.server = (env_server or self.settings.get("ntfy_server") or "https://ntfy.sh").rstrip("/")
 
     def load_settings(self, path: str) -> Dict[str, Any]:
         if os.path.exists(path):
@@ -35,6 +40,10 @@ class NtfyNotifier:
         - Phone / Laptop system banner: Shows title + 1-2 lines short summary.
         - Tapped / Opened in ntfy app: Shows full expanded breakdown and action buttons.
         """
+        if not self.topic:
+            print("[Notifier] Error: No ntfy topic specified!")
+            return False
+
         endpoint = f"{self.server}"
 
         # Combine short summary with expandable section
@@ -81,7 +90,7 @@ class NtfyNotifier:
             with urllib.request.urlopen(req, timeout=12) as resp:
                 return resp.status in (200, 201)
         except urllib.error.HTTPError as e:
-            print(f"[Notifier] HTTP Error {e.code}: {e.reason}")
+            print(f"[Notifier] HTTP Error {e.code}: {e.reason} (topic: '{self.topic}')")
             return False
         except Exception as e:
             print(f"[Notifier] Error sending notification: {e}")
