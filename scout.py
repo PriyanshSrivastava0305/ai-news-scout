@@ -102,6 +102,7 @@ def run_scout_cycle(dry_run=False):
     print("-" * 60)
     print(f"Total raw items gathered: {len(all_items)}. Filtering for interesting drops...")
 
+    MAX_ALERTS_PER_CYCLE = 2  # Strict anti-spam: max 2 highest-value alerts per cycle. If 0 drops, send 0!
     matched_count = 0
     skipped_seen = 0
 
@@ -118,6 +119,11 @@ def run_scout_cycle(dry_run=False):
         cache.mark_seen(item_id)
 
         if match:
+            # If we've already alerted the top 2 stories this cycle, mark seen silently
+            if matched_count >= MAX_ALERTS_PER_CYCLE:
+                print(f"   [Cap reached: {MAX_ALERTS_PER_CYCLE}] Marked seen silently to prevent notification spam.")
+                continue
+
             matched_count += 1
             title_str, short_summary, expanded_details = summarizer.format_drop(item, match)
 

@@ -2,19 +2,26 @@ import json
 import urllib.request
 import xml.etree.ElementTree as ET
 import hashlib
+import re
 from typing import List, Dict, Any
 
+# Targeted specifically to AI foundation labs + government/legal/investigation news
 GOOGLE_NEWS_AI_LEGAL_URL = (
     "https://news.google.com/rss/search?"
-    "q=(OpenAI+OR+Anthropic+OR+Google+OR+Meta+OR+Nvidia+OR+Microsoft)+AND+"
-    "(investigation+OR+lawsuit+OR+antitrust+OR+FTC+OR+DOJ+OR+subpoena+OR+government+OR+copyright+OR+ban)+when:3d"
+    "q=(%22AI%22+OR+%22Artificial+Intelligence%22+OR+%22ChatGPT%22+OR+%22Claude%22+OR+%22Gemini%22)+AND+"
+    "(OpenAI+OR+Anthropic+OR+%22Google+DeepMind%22+OR+Nvidia+OR+Microsoft+OR+Meta)+AND+"
+    "(investigation+OR+lawsuit+OR+antitrust+OR+FTC+OR+DOJ+OR+subpoena+OR+%22copyright+infringement%22+OR+banned)+when:2d"
     "&hl=en-US&gl=US&ceid=US:en"
 )
 
 HN_TOP_STORIES_URL = (
     "https://hn.algolia.com/api/v1/search_by_date?"
-    "tags=story&query=OpenAI+OR+Anthropic+OR+Nvidia+OR+DeepSeek+OR+AI+investigation+OR+FTC+OR+antitrust&hitsPerPage=20"
+    "tags=story&query=(OpenAI+OR+Anthropic+OR+Nvidia+OR+DeepSeek)+AND+(investigation+OR+lawsuit+OR+FTC+OR+antitrust)&hitsPerPage=15"
 )
+
+# Mandatory validation: Story title must contain at least one AI term and one legal/investigation term
+AI_TERMS = re.compile(r'\b(ai|artificial intelligence|chatgpt|claude|gemini|llm|deepseek|model|openai|anthropic)\b', re.IGNORECASE)
+LEGAL_TERMS = re.compile(r'\b(investigation|probe|lawsuit|sued|antitrust|ftc|doj|subpoena|copyright|infringement|safety|ban|banned|court)\b', re.IGNORECASE)
 
 class IndustryNewsScout:
     def __init__(self):
@@ -30,7 +37,7 @@ class IndustryNewsScout:
                 xml_data = resp.read()
                 root = ET.fromstring(xml_data)
                 
-                for item in root.findall(".//item")[:25]:
+                for item in root.findall(".//item")[:15]:
                     title_elem = item.find("title")
                     link_elem = item.find("link")
                     pub_date = item.find("pubDate")
@@ -44,17 +51,20 @@ class IndustryNewsScout:
                     source_name = source_elem.text if source_elem is not None else "News"
                     pub = pub_date.text if pub_date is not None else ""
 
-                    # Create stable hash for ID
+                    # Strict relevance verification: Must be AI-related AND legal/investigation related
+                    if not AI_TERMS.search(title) or not LEGAL_TERMS.search(title):
+                        continue
+
                     item_hash = hashlib.md5(title.encode("utf-8")).hexdigest()[:12]
 
                     results.append({
                         "id": f"gnews:{item_hash}",
                         "title": title,
-                        "description": f"Breaking legal / regulatory / company news reported by {source_name}. Published: {pub}",
+                        "description": f"Breaking legal / regulatory / AI company news reported by {source_name}. Published: {pub}",
                         "url": url,
                         "source": f"News: {source_name}",
                         "author": source_name,
-                        "tags": ["news", "legal", "investigation", "government", "company-news"],
+                        "tags": ["news", "legal", "investigation", "government", "ai-industry"],
                         "extra": {
                             "publisher": source_name,
                             "published": pub
@@ -63,7 +73,7 @@ class IndustryNewsScout:
         except Exception as e:
             print(f"[News Scout] Error fetching Google News: {e}")
 
-        # 2. Hacker News: Breaking tech discussions and announcements
+        # 2. Hacker News: High-traction stories
         try:
             req = urllib.request.Request(HN_TOP_STORIES_URL, headers=self.headers)
             with urllib.request.urlopen(req, timeout=10) as resp:
@@ -74,21 +84,22 @@ class IndustryNewsScout:
                     story_url = hit.get("url") or f"https://news.ycombinator.com/item?id={object_id}"
                     points = hit.get("points", 0)
 
-                    # Only include stories with some traction (e.g., >= 5 points)
-                    if object_id and title and points >= 5:
-                        results.append({
-                            "id": f"hn:{object_id}",
-                            "title": title,
-                            "description": f"Hacker News discussion ({points} points). URL: {story_url}",
-                            "url": story_url,
-                            "source": "Hacker News",
-                            "author": hit.get("author", "Community"),
-                            "tags": ["hackernews", "industry", "discussion"],
-                            "extra": {
-                                "hn_points": points,
-                                "comments": hit.get("num_comments", 0)
-                            }
-                        })
+                    # Only high-impact discussions (>= 15 points)
+                    if object_id and title and points >= 15:
+                        if AI_TERMS.search(title) and LEGAL_TERMS.search(title):
+                            results.append({
+                                "id": f"hn:{object_id}",
+                                "title": title,
+                                "description": f"Hacker News discussion ({points} points). URL: {story_url}",
+                                "url": story_url,
+                                "source": "Hacker News",
+                                "author": hit.get("author", "Community"),
+                                "tags": ["hackernews", "industry", "discussion"],
+                                "extra": {
+                                    "hn_points": points,
+                                    "comments": hit.get("num_comments", 0)
+                                }
+                            })
         except Exception as e:
             print(f"[News Scout] Error fetching Hacker News: {e}")
 

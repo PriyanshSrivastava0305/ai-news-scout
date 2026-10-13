@@ -4,6 +4,7 @@ import re
 from typing import List, Dict, Any, Optional
 
 TOPICS_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "config", "topics.json")
+MINIMUM_RELEVANCE_SCORE = 3  # Requires keyword in title (+3) or multiple strong keyword matches
 
 class TopicMatcher:
     def __init__(self, topics_path: str = TOPICS_PATH):
@@ -23,10 +24,11 @@ class TopicMatcher:
 
     def match(self, title: str, description: str, tags: Optional[List[str]] = None) -> Optional[Dict[str, Any]]:
         """
-        Evaluates whether a drop matches any configured topic.
-        Returns a dict with matched topic information and score if matched, else None.
+        Evaluates whether a drop strongly matches any configured topic.
+        Requires high relevance (score >= 3: keyword in title or multiple strong matches).
         """
         combined_text = f"{title} {description} {' '.join(tags or [])}".lower()
+        title_lower = title.lower()
         
         best_match = None
         highest_score = 0
@@ -40,21 +42,16 @@ class TopicMatcher:
                 if not kw_lower:
                     continue
                 
-                # Check for word boundary or direct occurrence
                 pattern = r'\b' + re.escape(kw_lower) + r'\b'
-                if re.search(pattern, combined_text):
+                # Strongest signal: Keyword in Title
+                if re.search(pattern, title_lower) or kw_lower in title_lower:
                     matched_keywords.append(kw)
-                    # Higher weight if keyword appears in title
-                    if re.search(pattern, title.lower()):
-                        score += 3
-                    else:
-                        score += 1
-                elif kw_lower in combined_text:
-                    # Partial match for compound terms
+                    score += 3
+                elif re.search(pattern, combined_text):
                     matched_keywords.append(kw)
                     score += 1
 
-            if matched_keywords and score > highest_score:
+            if matched_keywords and score >= MINIMUM_RELEVANCE_SCORE and score > highest_score:
                 highest_score = score
                 best_match = {
                     "topic_id": topic.get("id"),

@@ -2,9 +2,10 @@ name: AI News Scout 24/7
 
 on:
   schedule:
-    # Runs every 5 minutes, 24/7
-    - cron: '*/5 * * * *'
+    # Runs on offset minutes to bypass GitHub top-of-hour scheduler queue delays
+    - cron: '8,23,38,53 * * * *'
   workflow_dispatch: # Allows manual trigger from GitHub UI anytime
+  repository_dispatch: # Allows webhook trigger from any free cron ping
 
 permissions:
   contents: write
