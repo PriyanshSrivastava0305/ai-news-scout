@@ -20,6 +20,7 @@ from sources.huggingface import HuggingFaceScout
 from sources.github_scout import GitHubScout
 from sources.reddit_scout import RedditScout
 from sources.arxiv_scout import ArxivScout
+from sources.news_scout import IndustryNewsScout
 
 CONFIG_DIR = os.path.join(os.path.dirname(__file__), "config")
 TOPICS_PATH = os.path.join(CONFIG_DIR, "topics.json")
@@ -87,6 +88,14 @@ def run_scout_cycle(dry_run=False):
         ax_items = ax.fetch_recent_drops()
         print(f"   → Found {len(ax_items)} preprints from arXiv.")
         all_items.extend(ax_items)
+
+    # Industry & Legal / Government News (Google News & Hacker News)
+    if settings.get("enable_sources", {}).get("industry_news", True):
+        print("🔍 Scanning Industry News (Legal, Investigations, Gov & Companies)...")
+        in_scout = IndustryNewsScout()
+        news_items = in_scout.fetch_recent_drops()
+        print(f"   → Found {len(news_items)} news reports & discussions.")
+        all_items.extend(news_items)
 
     print("-" * 60)
     print(f"Total raw items gathered: {len(all_items)}. Filtering against your topics...")
